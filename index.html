@@ -17,8 +17,7 @@
 <body>
     <div id="app">
         <div>
-            填充税前收入：<input type="number" v-model="fill_income"></input>
-            专项扣除：<input type="number" v-model="fill_income"></input>
+           {{incomes}}
             <button v-on:click="fill">填充</button>
         </div>
         <table>
@@ -27,14 +26,14 @@
             </tr>
             <tr v-for="(item, index) in incomes">
                 <th>{{index+1}}月</th>
-                <th><input type="number" v-model="incomes[index]"></input></th>
+                <th><input type="number" v-model.number="incomes[index]"></input></th>
                 <th><input type="number" v-model="spectial_deduction[index]"></input></th>
                 <th><input type="number" v-model="spectial_addtion_deduction[index]"></input></th>
                 <th><input type="number" v-model="not_tex[index]"></input></th>
-                <th>{{income_sum[index]}}</th>
-                <th>{{sum_not_tex[index]}}</th>
+                <th>{{sum_income[index]}}</th>
                 <th>{{sum_spectial_deduction[index]}}</th>
                 <th>{{sum_spectial_addtion_deduction[index]}}</th>
+                <th>{{sum_not_tex[index]}}</th>
             </tr>
         </table>
         <div v-for="(item, index) in incomes">
@@ -55,22 +54,22 @@
                 el: "#app",
                 data() {
                     return {
-                        columnList: ['月份','当月税前收入', '专项扣除', '专项附加扣除', '减除费用','累计收入','累计减除费用','累计专项扣除','累计专项附加扣除'],
+                        columnList: ['月份','当月税前收入', '专项扣除', '专项附加扣除', '减除费用','累计收入','累计专项扣除','累计专项附加扣除','累计减除费用'],
+                        
+                        incomes: [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+                        sum_income: [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
 
-                        incomes: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        income_sum: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        spectial_addtion_deduction: [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+                        sum_spectial_addtion_deduction: [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
 
-                        spectial_addtion_deduction: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        sum_spectial_addtion_deduction: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        spectial_deduction: [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+                        sum_spectial_deduction: [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
 
-                        spectial_deduction: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        sum_spectial_deduction: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        sum_tex: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        tex: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 
-                        tex_sum: 0,
-
-                        sum_not_tex: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        not_tex: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        cal_tex_before: 0,
+                        sum_not_tex: [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+                        not_tex: [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
 
                         rec_sum: 0,
 
@@ -80,9 +79,9 @@
                 },
 
                 methods: {
-                    caltex(income, subBefor, sumspectial_addtion_deduction, notexSum, cal_tex_before, texSum) {
-                        console.log(income, subBefor, sumspectial_addtion_deduction, notexSum, cal_tex_before, texSum)
-                        should = income - subBefor - sumspectial_addtion_deduction - notexSum - cal_tex_before
+                    caltex(income, spectial_deduction, spectial_addtion_deduction, notexSum, cal_tex_before) {
+                        console.log(income, spectial_deduction, spectial_addtion_deduction, notexSum, cal_tex_before)
+                        should = income - spectial_deduction - spectial_addtion_deduction - notexSum - cal_tex_before
                         should = should.toFixed(2)
                         console.log('should: ', should)
                         tex_table = [
@@ -106,49 +105,56 @@
                             }
                         }
                     },
-                    cal_sum() {
-                        var temp_income_sum = []
-                        var temp_sum_not_tex = []
-                        for (let i = 0; i < this.incomes.length; i++) {
-                            let income = Number.parseFloat(this.incomes[i])
-                            let not_tex = Number.parseFloat(this.not_tex[i])
+                    cal_sum_single(list) {
+                        temp_list = []
+                        for (let i = 0; i < list.length; i++) {
+                            let t = Number.parseFloat(list[i])
                             if (i == 0) {
-                                temp_income_sum.push(income)
-                                temp_sum_not_tex.push(not_tex)
+                                temp_list.push(t)
                             } else {
-                                temp_income_sum.push(temp_income_sum[i - 1] + income)
-                                temp_sum_not_tex.push(temp_sum_not_tex[i - 1] + not_tex)
+                                temp_list.push(list[i - 1] + t)
                             }
                         }
-                        this.income_sum = temp_income_sum
-                        this.sum_not_tex = temp_sum_not_tex
+                        return temp_list
+                    },
+                    cal_sum() {
+                        this.sum_income = this.cal_sum_single(this.sum_income)
+                        this.sum_not_tex = this.cal_sum_single(this.sum_not_tex)
+                        this.sum_spectial_deduction = this.cal_sum_single(this.sum_spectial_deduction)
+                        this.sum_spectial_addtion_deduction = this.cal_sum_single(this.sum_spectial_addtion_deduction)
                     },
                     cal_month_salary() {
                         for (let i = 0; i < this.incomes.length; i++) {
-                            let income = Number.parseFloat(this.incomes[i])
-                            this.sum_spectial_deduction = this.sum_spectial_deduction + this.spectial_deduction[i]
-                            this.sum_spectial_addtion_deduction = this.sum_spectial_addtion_deduction + this.spectial_addtion_deduction[i]
-                            texCur = this.caltex(this.income_sum[i], this.sum_spectial_deduction, this.sum_spectial_addtion_deduction, this.sum_not_tex, this.cal_tex_before, this.tex_sum)
-                            texCur = Number.parseFloat(texCur)
-                            this.sum_not_tex = this.sum_not_tex[i] + 5000
-                            this.tex_sum += texCur
-                            rec = income - texCur - this.spectial_deduction[i]
-                            this.rec_sum = this.rec_sum + rec
-                            this.tex_per_month.push(texCur)
+                            cur_tex = this.caltex(this.sum_income[i], this.sum_spectial_deduction[i], this.sum_spectial_addtion_deduction[i], this.sum_not_tex[i], sum_tex[i])
+                            if (i == 0) {
+                                sum_tex[i] = cur_tex
+                            } else {
+                                sum_tex[i] = sum_tex[i] + cur_tex
+                            }
                         }
                     },
                     cal_salary() {
                         this.cal_sum();
 //                        this.cal_month_salary()
                     },
-                    fill() {
-                        var tempArray = []
-                        for (let i = 0; i < this.incomes.length; i++) {
-                            tempArray.push(this.fill_income)
+                    fill_single(list) {
+                        list2 = []
+                        list2.push(list[0])
+                        for (let i = 1; i < list.length; i++) {
+                            if (list[i] == -1) {
+                                list[i] = list[i - 1]
+                                list2.push(list[i - 1])
+                            } else {
+                                list2.push(list[i])
+                            }
                         }
-                        this.incomes = tempArray
-                        // this.incomes[i] = this.fill_income
-                        // this.$set(this.data, "incomes", tempArray)
+                        return list2
+                    },
+                    fill() {
+                        this.incomes = this.fill_single(this.incomes)
+                        this.spectial_addtion_deduction = this.fill_single(this.spectial_addtion_deduction)
+                        this.spectial_deduction = this.fill_single(this.spectial_deduction)
+                        this.not_tex = this.fill_single(this.not_tex)
                     },
                     fresh() {
                         for (let i = 0; i < this.incomes.length; i++) {
