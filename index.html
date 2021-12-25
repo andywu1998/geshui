@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lan="zh-cn">
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        .active {
+            color: red
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div>
+            填充税前收入：<input type="number" v-model="fill_income"></input>
+            <button v-on:click="fill">填充</button>
+        </div>
+        <table>
+            <tr>
+                <th v-for='(item,ind) in columnList' :key="ind">{{item}}</th>
+            </tr>
+            <tr v-for="(item, index) in incomes">
+                <th>{{index+1}}月</th>
+                <th><input type="number" v-model="incomes[index]"></input></th>
+                <th><input type="number" v-model="sub_before[index]"></input></th>
+                <th><input type="number" v-model="other[index]"></input></th>
+                <th><input type="number" v-model="income_sum[index]"></input></th>
+            </tr>
+        </table>
+        <div v-for="(item, index) in incomes">
+            {{index+1}}月
+            税前收入<input type="number" v-model="incomes[index]"></input>
+            税前应扣<input type="number" v-model="sub_before[index]"></input>
+        </div>
+        <button v-on:click="cal_salary">计算</button>
+    </div>
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+    <script>
+        var app = new Vue(
+            {
+                el: "#app",
+                data() {
+                    return {
+                        columnList: ['月份','当月税前收入', '专项扣除', '专项附加扣除','累计收入','累计减除费用','累计专项扣除','累计专项附加扣除'],
+
+                        incomes: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        income_sum: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+
+                        other: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        sum_other: 0,
+
+                        sub_before: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        sum_sub_before: 0,
+
+                        tex_sum: 0,
+
+                        sum_not_tex: 10000,
+                        cal_tex_before: 0,
+
+                        rec_sum: 0,
+
+                        tex_per_month: [],
+                        fill_income: 0
+                    }
+                },
+
+                methods: {
+                    caltex(income, subBefor, sumOther, notexSum, cal_tex_before, texSum) {
+                        console.log(income, subBefor, sumOther, notexSum, cal_tex_before, texSum)
+                        should = income - subBefor - sumOther - notexSum - cal_tex_before
+                        should = should.toFixed(2)
+                        console.log('should: ', should)
+                        tex_table = [
+                            [0, 0.03, 0],
+                            [36000, 0.1, 2520],
+                            [144000, 0.2, 16920],
+                            [300000, 0.25, 31920],
+                            [420000, 0.3, 52920],
+                            [660000, 0.35, 85920],
+                            [960000, 0.45, 181920],
+                            [10000000000000000, 0.45, 181920]
+                        ]
+                        for (let i = 0; i < tex_table.length; i++) {
+                            if (tex_table[i][0] < should && should <= tex_table[i + 1][0]) {
+                                console.log(tex_table[i])
+                                tex = should * tex_table[i][1] - tex_table[i][2]
+                                console.log("tex", tex)
+                                should_tex = tex - texSum
+                                console.log("should_tex", should_tex)
+                                return Number.parseFloat(should_tex).toFixed(2);
+                            }
+                        }
+                    },
+                    cal_salary() {
+                        var temp_income_sum = []
+                        for (let i = 0; i < this.incomes.length; i++) {
+                            let income = Number.parseFloat(this.incomes[i])
+                            if (i == 0) {
+                                temp_income_sum.push(income)
+                            } else {
+                                temp_income_sum.push(temp_income_sum[i - 1] + income)
+                            }
+                            
+                            this.sum_sub_before = this.sum_sub_before + this.sub_before[i]
+                            this.sum_other = this.sum_other + this.other[i]
+                            texCur = this.caltex(this.income_sum[i], this.sum_sub_before, this.sum_other, this.sum_not_tex, this.cal_tex_before, this.tex_sum)
+                            texCur = Number.parseFloat(texCur)
+                            this.sum_not_tex = this.sum_not_tex + 5000
+                            this.tex_sum += texCur
+                            rec = income - texCur - this.sub_before[i]
+                            this.rec_sum = this.rec_sum + rec
+                            this.tex_per_month.push(texCur)
+                        }
+                        this.income_sum = temp_income_sum
+                    },
+                    fill() {
+                        var tempArray = []
+                        for (let i = 0; i < this.incomes.length; i++) {
+                            tempArray.push(this.fill_income)
+                        }
+                        this.incomes = tempArray
+                        // this.incomes[i] = this.fill_income
+                        // this.$set(this.data, "incomes", tempArray)
+                    },
+                    fresh() {
+                        for (let i = 0; i < this.incomes.length; i++) {
+                            let income = Number.parseFloat(this.incomes[i])
+                        }
+                    }
+                },
+            }
+        )
+    </script>
+</body>
+
+</html>
